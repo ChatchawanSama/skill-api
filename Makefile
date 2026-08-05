@@ -1,5 +1,6 @@
+.PHONY: run
 run:
-	export APPENV=local; go run -race cmd/main.go
+	APPENV=local go run cmd/main.go
 
 update_dependency:
 	go mod tidy

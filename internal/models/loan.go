@@ -23,13 +23,13 @@ func ValidLoanPurposes() []LoanPurpose {
 }
 
 type ApplyLoanRequest struct {
-	FullName      string  `json:"fullName" validate:"required,min=2,max=255"`
-	MonthlyIncome float64 `json:"monthlyIncome" validate:"required,min=5000,max=5000000"`
-	LoanAmount    float64 `json:"loanAmount" validate:"required,min=1000,max=5000000"`
-	LoanPurpose   string  `json:"loanPurpose" validate:"required,oneof=education home car business personal"`
-	Age           int     `json:"age" validate:"required,gt=0"`
-	PhoneNumber   string  `json:"phoneNumber" validate:"required,numeric,len=10"`
-	Email         string  `json:"email" validate:"required,email"`
+	FullName      string  `json:"fullName"`
+	MonthlyIncome float64 `json:"monthlyIncome"`
+	LoanAmount    float64 `json:"loanAmount"`
+	LoanPurpose   string  `json:"loanPurpose"`
+	Age           int     `json:"age"`
+	PhoneNumber   string  `json:"phoneNumber"`
+	Email         string  `json:"email"`
 }
 
 type LoanApplication struct {

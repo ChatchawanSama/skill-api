@@ -1,12 +1,22 @@
-app:
-  name: skill-api
-  project_id: skill-api
-  env: local
-
 log:
-  env: dev
-  level: info
+  level: "debug"
+  env: "local"
+
+app:
+  name: "skill-api"
+  project-id: "dev"
 
 server:
-  address: :8080
-  time_zone: Asia/Bangkok
+  address: ":8080"
+  time-zone: "Asia/Bangkok"
+
+db:
+  name: "ktb_glo"
+  tls: "true"
+  max_open_conns: 32
+  max_idle_conns: 64
+  conn_max_lifetime: 5m
+  
+
+jwt:
+  expire: 24h
