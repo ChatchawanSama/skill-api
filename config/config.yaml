@@ -1,0 +1,12 @@
+app:
+  name: skill-api
+  project_id: skill-api
+  env: local
+
+log:
+  env: dev
+  level: info
+
+server:
+  address: :8080
+  time_zone: Asia/Bangkok

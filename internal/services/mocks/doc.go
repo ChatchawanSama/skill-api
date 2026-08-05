@@ -1,0 +1,3 @@
+package mocks
+
+// Generated mocks live here. Run: go generate ./internal/services/...
