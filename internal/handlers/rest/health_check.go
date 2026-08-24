@@ -18,7 +18,8 @@ func NewHealthCheckHandler() HealthCheckHandler {
 }
 
 func (h *healthCheckHandler) HealthCheck(c echo.Context) error {
-	return c.NoContent(http.StatusOK)
+	// return c.NoContent(http.StatusOK)
+	return c.String(http.StatusOK, "ok")
 }
 
 func (h *healthCheckHandler) ReadinessCheck(c echo.Context) error {

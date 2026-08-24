@@ -8,6 +8,7 @@ app:
 
 server:
   address: ":8080"
+  # time-zone: "Asia/Bangkok"
   time-zone: "Asia/Bangkok"
 
 db:

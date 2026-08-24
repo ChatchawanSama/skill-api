@@ -2,61 +2,18 @@ package models
 
 import "time"
 
-type LoanPurpose string
-
-const (
-	LoanPurposeEducation LoanPurpose = "education"
-	LoanPurposeHome      LoanPurpose = "home"
-	LoanPurposeCar       LoanPurpose = "car"
-	LoanPurposeBusiness  LoanPurpose = "business"
-	LoanPurposePersonal  LoanPurpose = "personal"
-)
-
-func ValidLoanPurposes() []LoanPurpose {
-	return []LoanPurpose{
-		LoanPurposeEducation,
-		LoanPurposeHome,
-		LoanPurposeCar,
-		LoanPurposeBusiness,
-		LoanPurposePersonal,
-	}
-}
-
-type ApplyLoanRequest struct {
-	FullName      string  `json:"fullName"`
-	MonthlyIncome float64 `json:"monthlyIncome"`
-	LoanAmount    float64 `json:"loanAmount"`
-	LoanPurpose   string  `json:"loanPurpose"`
-	Age           int     `json:"age"`
-	PhoneNumber   string  `json:"phoneNumber"`
-	Email         string  `json:"email"`
-}
-
 type LoanApplication struct {
-	ApplicationID string      `json:"applicationId"`
-	FullName      string      `json:"fullName"`
-	MonthlyIncome float64     `json:"monthlyIncome"`
-	LoanAmount    float64     `json:"loanAmount"`
-	LoanPurpose   LoanPurpose `json:"loanPurpose"`
-	Age           int         `json:"age"`
-	PhoneNumber   string      `json:"phoneNumber"`
-	Email         string      `json:"email"`
-	Eligible      bool        `json:"eligible"`
-	Reason        string      `json:"reason"`
-	Timestamp     time.Time   `json:"timestamp"`
-}
-
-type ApplyLoanResponse struct {
-	ApplicationID string    `json:"applicationId"`
-	Eligible      bool      `json:"eligible"`
-	Reason        string    `json:"reason"`
-	Timestamp     time.Time `json:"timestamp"`
-}
-
-type ListLoansResponse struct {
-	Applications []LoanApplication `json:"applications"`
-	Page         int               `json:"page"`
-	TotalPages   int               `json:"totalPages"`
+	ApplicationID string    `gorm:"column:application_id;primaryKey;size:36"`
+	FullName      string    `gorm:"column:full_name"`
+	MonthlyIncome float64   `gorm:"column:monthly_income"`
+	LoanAmount    float64   `gorm:"column:loan_amount"`
+	LoanPurpose   string    `gorm:"column:loan_purpose"`
+	Age           int       `gorm:"column:age"`
+	PhoneNumber   string    `gorm:"column:phone_number"`
+	Email         string    `gorm:"column:email"`
+	Eligible      bool      `gorm:"column:eligible"`
+	Reason        string    `gorm:"column:reason"`
+	Timestamp     time.Time `gorm:"column:timestamp"`
 }
 
 type ListLoansQuery struct {

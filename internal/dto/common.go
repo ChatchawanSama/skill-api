@@ -1,8 +1,8 @@
-package models
+package dto
 
 type AppResponse struct {
-	Status string      `json:"status"`
-	Data   interface{} `json:"data,omitempty"`
+	Status string
+	Data   interface{}
 }
 
 type AppErrorResponse struct {

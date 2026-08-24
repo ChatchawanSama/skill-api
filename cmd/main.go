@@ -3,12 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
+	"github.com/fusic/skill-api/internal/config"
 	"github.com/fusic/skill-api/internal/pkg/configurer"
 	"github.com/fusic/skill-api/internal/pkg/logger"
 	"github.com/fusic/skill-api/internal/pkg/mysql_database"
+	"github.com/fusic/skill-api/internal/repositories"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+
+	"github.com/fusic/skill-api/internal/handlers/rest"
+	"github.com/fusic/skill-api/internal/services"
 )
 
 func main() {
@@ -18,6 +25,9 @@ func main() {
 	// load config
 	conf := configurer.LoadConfig()
 
+	if err := config.SetTimeZone(conf.Server.TimeZone); err != nil {
+		log.Fatal("fail set timezone")
+	}
 	// load secret env
 	configurer.LoadSecret(&conf.Secret)
 
@@ -51,5 +61,28 @@ func main() {
 		}
 	}()
 
+	// if err := db.AutoMigrate(&models.LoanApplication{}); err != nil {
+	// 	logger.Fatal(ctx, "fail to migrate loan applications", zap.Error(err))
+	// }
 	// TODO : Init repositories, services, handlers, and start the HTTP server.
+	e := echo.New()
+	e.Validator = rest.NewCustomValidator()
+
+	loanRepository := repositories.NewLoanRepository(db)
+	loanService := services.NewLoanService(loanRepository)
+	loanHandler := rest.NewLoanHandler(loanService)
+
+	healthCheckHandler := rest.NewHealthCheckHandler()
+
+	httpServer := rest.NewHttpServer(
+		conf,
+		e,
+		healthCheckHandler,
+		loanHandler,
+	)
+
+	if err := httpServer.Start(conf.Server.Address); err != nil {
+		logger.Info(ctx, "fail to start HTTP server", zap.Error(err))
+	}
+
 }
