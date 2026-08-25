@@ -22,3 +22,7 @@ type ListLoansQuery struct {
 	Eligible *bool  `query:"eligible"`
 	Purpose  string `query:"purpose"`
 }
+
+func (LoanApplication) TableName() string {
+	return "loan_applications"
+}
