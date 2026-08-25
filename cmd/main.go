@@ -70,6 +70,7 @@ func main() {
 
 	loanRepository := repositories.NewLoanRepository(db)
 	loanService := services.NewLoanService(loanRepository)
+
 	loanHandler := rest.NewLoanHandler(loanService)
 
 	healthCheckHandler := rest.NewHealthCheckHandler()
