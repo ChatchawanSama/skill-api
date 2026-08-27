@@ -30,21 +30,37 @@ func NewLoanService(loanRepository repositories.LoanRepository) LoanService {
 
 func checkEligibility(request entity.ApplyLoanRequest) (string, bool) {
 	switch {
-	case request.MonthlyIncome < 10000:
+	case !isEligibleMonthlyIncome(request.MonthlyIncome):
 		return constant.ReasonInsufficientIncome, false
 
-	case request.Age < 20 || request.Age > 60:
+	case !isEligibleAge(request.Age):
 		return constant.ReasonInvalidAge, false
 
-	case request.LoanPurpose == "business":
+	case !isEligibleLoanPurpose(request.LoanPurpose):
 		return constant.ReasonInvalidPurpose, false
 
-	case request.LoanAmount > request.MonthlyIncome*12:
+	case !isEligibleLoanAmount(request.LoanAmount, request.MonthlyIncome):
 		return constant.ReasonExcessRequest, false
 
 	default:
 		return constant.ReasonEligible, true
 	}
+}
+
+func isEligibleMonthlyIncome(income float64) bool {
+	return income >= 10000
+}
+
+func isEligibleAge(age int) bool {
+	return age >= 20 && age <= 60
+}
+
+func isEligibleLoanPurpose(purpose string) bool {
+	return purpose != "business"
+}
+
+func isEligibleLoanAmount(loanAmount, income float64) bool {
+	return loanAmount <= income*12
 }
 
 func (s *loanService) ApplyLoan(request entity.ApplyLoanRequest) (entity.ApplyLoanResponse, error) {
