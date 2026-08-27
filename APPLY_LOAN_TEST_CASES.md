@@ -4,15 +4,66 @@ Endpoint: `POST /api/v1/loans`
 
 Content-Type: `application/json`
 
-## 1. Invalid Requests
+## 1. Invalid requests (HTTP 400)
 
-Invalid requests should return HTTP `400 Bad Request`.
+All invalid requests return `"message": "Invalid request body"`.
 
-### 1.1 Invalid `fullName`
+### 1.1 Malformed JSON
+
+```json
+{"fullName":"Somkanit Jitsanook",}
+```
 
 ```json
 {
-  "fullName": "",
+  "message": "Invalid request body",
+  "reason": "<JSON syntax error returned by Echo>"
+}
+```
+
+The exact syntax-error text can differ depending on the JSON parser version.
+
+### 1.2 Missing all required fields
+
+```json
+{}
+```
+
+```json
+{
+  "message": "Invalid request body",
+  "reason": "missing required fields: fullName, monthlyIncome, loanAmount, loanPurpose, age, phoneNumber, email"
+}
+```
+
+### 1.3 Missing some required fields
+
+This example is missing `fullName` and `monthlyIncome`.
+
+```json
+{
+  "loanAmount": 100000,
+  "loanPurpose": "home",
+  "age": 25,
+  "phoneNumber": "0851234567",
+  "email": "demo@example.com"
+}
+```
+
+```json
+{
+  "message": "Invalid request body",
+  "reason": "missing required fields: fullName, monthlyIncome"
+}
+```
+
+If fields are both missing and invalid, the current validator reports only the missing fields.
+
+### 1.4 Invalid `fullName`
+
+```json
+{
+  "fullName": "S",
   "monthlyIncome": 15000,
   "loanAmount": 100000,
   "loanPurpose": "home",
@@ -22,16 +73,11 @@ Invalid requests should return HTTP `400 Bad Request`.
 }
 ```
 
-Expected response:
-
 ```json
-{
-  "message": "Invalid request body",
-  "reason": "fullName is required or must contain 2–255 characters"
-}
+{"message":"Invalid request body","reason":"fullName must be a valid fullName"}
 ```
 
-### 1.2 Invalid `monthlyIncome`
+### 1.5 Invalid `monthlyIncome`
 
 ```json
 {
@@ -45,16 +91,11 @@ Expected response:
 }
 ```
 
-Expected response:
-
 ```json
-{
-  "message": "Invalid request body",
-  "reason": "monthlyIncome must be between 5000 and 5000000"
-}
+{"message":"Invalid request body","reason":"monthlyIncome must be a valid monthlyIncome"}
 ```
 
-### 1.3 Invalid `loanAmount`
+### 1.6 Invalid `loanAmount`
 
 ```json
 {
@@ -68,16 +109,11 @@ Expected response:
 }
 ```
 
-Expected response:
-
 ```json
-{
-  "message": "Invalid request body",
-  "reason": "loanAmount must be between 1000 and 5000000"
-}
+{"message":"Invalid request body","reason":"loanAmount must be a valid loanAmount"}
 ```
 
-### 1.4 Invalid `loanPurpose`
+### 1.7 Invalid `loanPurpose`
 
 ```json
 {
@@ -91,16 +127,13 @@ Expected response:
 }
 ```
 
-Expected response:
-
 ```json
-{
-  "message": "Invalid request body",
-  "reason": "loanPurpose must be one of education, home, car, business, personal"
-}
+{"message":"Invalid request body","reason":"loanPurpose must be a valid loanPurpose"}
 ```
 
-### 1.5 Invalid `age`
+### 1.8 Invalid `age`
+
+Use `-1`. An age of `0` is Go's zero value and fails `required`, so it is reported as missing instead.
 
 ```json
 {
@@ -108,22 +141,17 @@ Expected response:
   "monthlyIncome": 15000,
   "loanAmount": 100000,
   "loanPurpose": "home",
-  "age": 0,
+  "age": -1,
   "phoneNumber": "0851234567",
   "email": "demo@example.com"
 }
 ```
 
-Expected response:
-
 ```json
-{
-  "message": "Invalid request body",
-  "reason": "age must be more than 0"
-}
+{"message":"Invalid request body","reason":"age must be a valid age"}
 ```
 
-### 1.6 Invalid `phoneNumber`
+### 1.9 Invalid `phoneNumber`
 
 ```json
 {
@@ -137,16 +165,11 @@ Expected response:
 }
 ```
 
-Expected response:
-
 ```json
-{
-  "message": "Invalid request body",
-  "reason": "phoneNumber must contain exactly 10 numeric digits"
-}
+{"message":"Invalid request body","reason":"phoneNumber must be a valid phoneNumber"}
 ```
 
-### 1.7 Invalid `email`
+### 1.10 Invalid `email`
 
 ```json
 {
@@ -160,20 +183,11 @@ Expected response:
 }
 ```
 
-Expected response:
-
 ```json
-{
-  "message": "Invalid request body",
-  "reason": "email must be a valid email"
-}
+{"message":"Invalid request body","reason":"email must be a valid email"}
 ```
 
-## 2. Valid Requests
-
-Valid requests should return HTTP `200 OK`.
-
-### 2.1 Eligible
+## 2. Valid and eligible (HTTP 200)
 
 ```json
 {
@@ -187,22 +201,20 @@ Valid requests should return HTTP `200 OK`.
 }
 ```
 
-Expected response:
-
 ```json
 {
   "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "eligible": true,
   "reason": "Eligible under base rules",
-  "timestamp": "2026-08-14T15:00:00+07:00"
+  "timestamp": "2026-08-26T15:00:00+07:00"
 }
 ```
 
-The `applicationId` and `timestamp` values are generated for each request, so the actual values will differ.
+The UUID and timestamp are generated for each request, so their actual values will differ.
 
-## 3. Valid but Ineligible Requests
+## 3. Valid but ineligible (HTTP 200)
 
-These requests pass input validation and should return HTTP `200 OK` with `eligible: false`.
+These requests pass handler validation but return `"eligible": false`.
 
 ### 3.1 Insufficient monthly income
 
@@ -218,88 +230,61 @@ These requests pass input validation and should return HTTP `200 OK` with `eligi
 }
 ```
 
-Expected response:
-
 ```json
 {
   "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "eligible": false,
   "reason": "Monthly income is insufficient",
-  "timestamp": "2026-08-14T15:00:00+07:00"
+  "timestamp": "2026-08-26T15:00:00+07:00"
 }
 ```
 
 ### 3.2 Age outside eligible range
 
-```json
-{
-  "fullName": "Somkanit Jitsanook",
-  "monthlyIncome": 15000,
-  "loanAmount": 100000,
-  "loanPurpose": "home",
-  "age": 19,
-  "phoneNumber": "0851234567",
-  "email": "demo@example.com"
-}
-```
-
-Expected response:
+Use the valid request above with `"age": 19`.
 
 ```json
 {
   "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "eligible": false,
   "reason": "Age not in range (must be between 20-60)",
-  "timestamp": "2026-08-14T15:00:00+07:00"
+  "timestamp": "2026-08-26T15:00:00+07:00"
 }
 ```
 
 ### 3.3 Unsupported business purpose
 
-```json
-{
-  "fullName": "Somkanit Jitsanook",
-  "monthlyIncome": 15000,
-  "loanAmount": 100000,
-  "loanPurpose": "business",
-  "age": 25,
-  "phoneNumber": "0851234567",
-  "email": "demo@example.com"
-}
-```
-
-Expected response:
+Use the valid request above with `"loanPurpose": "business"`.
 
 ```json
 {
   "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "eligible": false,
   "reason": "Business loans not supported",
-  "timestamp": "2026-08-14T15:00:00+07:00"
+  "timestamp": "2026-08-26T15:00:00+07:00"
 }
 ```
 
 ### 3.4 Loan amount exceeds 12 months of income
 
-```json
-{
-  "fullName": "Somkanit Jitsanook",
-  "monthlyIncome": 15000,
-  "loanAmount": 180001,
-  "loanPurpose": "home",
-  "age": 25,
-  "phoneNumber": "0851234567",
-  "email": "demo@example.com"
-}
-```
-
-Expected response:
+Use the valid request above with `"loanAmount": 180001`.
 
 ```json
 {
   "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "eligible": false,
   "reason": "Loan amount cannot exceed 12 months of income",
-  "timestamp": "2026-08-14T15:00:00+07:00"
+  "timestamp": "2026-08-26T15:00:00+07:00"
+}
+```
+
+## 4. Service or database error (HTTP 500)
+
+After a valid request, a service or repository failure returns:
+
+```json
+{
+  "message": "Unable to process loan application",
+  "reason": "<service or database error>"
 }
 ```

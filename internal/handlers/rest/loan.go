@@ -32,7 +32,7 @@ func (h *loanHandler) ApplyLoan(c echo.Context) error {
 	if err := c.Bind(&requestDTO); err != nil {
 		return c.JSON(http.StatusBadRequest, dto.AppErrorResponse{
 			Message: "Invalid request body",
-			Reason:  err.Error(),
+			Reason:  "Generic error",
 		})
 	}
 
