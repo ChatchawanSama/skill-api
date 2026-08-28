@@ -5,6 +5,8 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockery --name LoanRepository --output ./mocks
+
 type LoanRepository interface {
 	ApplyLoan(application models.LoanApplication) error
 	GetLoanStatus(applicationId string) (models.LoanApplication, error)
