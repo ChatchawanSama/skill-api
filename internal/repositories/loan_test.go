@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"errors"
 	"regexp"
 	"testing"
 	"time"
@@ -86,5 +87,63 @@ func TestLoanRepository_ApplyLoan_Success(t *testing.T) {
 	err := repository.ApplyLoan(application)
 
 	require.NoError(t, err)
+	require.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestLoanRepository_ApplyLoan_Error(t *testing.T) {
+	gormDB, sqlMock := setupMockDatabase(t)
+	repository := NewLoanRepository(gormDB)
+
+	application := models.LoanApplication{
+		ApplicationID: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+		FullName:      "John Doe",
+		MonthlyIncome: 10000,
+		LoanAmount:    120000,
+		LoanPurpose:   "home",
+		Age:           20,
+		PhoneNumber:   "0812345678",
+		Email:         "john@example.com",
+		Eligible:      true,
+		Reason:        constant.ReasonEligible,
+		Timestamp: time.Date(
+			2026, time.September, 3,
+			10, 30, 0, 0,
+			time.Local,
+		),
+	}
+
+	expectedError := errors.New("failed to insert loan application")
+
+	expectedSQL := regexp.QuoteMeta(
+		"INSERT INTO `loan_applications` " +
+			"(`application_id`,`full_name`,`monthly_income`,`loan_amount`," +
+			"`loan_purpose`,`age`,`phone_number`,`email`,`eligible`,`reason`,`timestamp`) " +
+			"VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+	)
+
+	sqlMock.ExpectBegin()
+
+	sqlMock.
+		ExpectExec(expectedSQL).
+		WithArgs(
+			application.ApplicationID,
+			application.FullName,
+			application.MonthlyIncome,
+			application.LoanAmount,
+			application.LoanPurpose,
+			application.Age,
+			application.PhoneNumber,
+			application.Email,
+			application.Eligible,
+			application.Reason,
+			application.Timestamp,
+		).
+		WillReturnError(expectedError)
+
+	sqlMock.ExpectRollback()
+
+	err := repository.ApplyLoan(application)
+
+	require.ErrorIs(t, err, expectedError)
 	require.NoError(t, sqlMock.ExpectationsWereMet())
 }
