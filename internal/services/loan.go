@@ -20,11 +20,15 @@ type LoanService interface {
 
 type loanService struct {
 	loanRepository repositories.LoanRepository
+	generateID     func() string
+	currentTime    func() time.Time
 }
 
 func NewLoanService(loanRepository repositories.LoanRepository) LoanService {
 	return &loanService{
 		loanRepository: loanRepository,
+		generateID:     uuid.NewString,
+		currentTime:    time.Now,
 	}
 }
 
@@ -68,10 +72,10 @@ func (s *loanService) ApplyLoan(request entity.ApplyLoanRequest) (entity.ApplyLo
 	reason, eligibility := checkEligibility(request)
 
 	response := entity.ApplyLoanResponse{
-		ApplicationID: uuid.NewString(),
+		ApplicationID: s.generateID(), //function
 		Eligible:      eligibility,
 		Reason:        reason,
-		Timestamp:     time.Now(),
+		Timestamp:     s.currentTime(), //time
 	}
 
 	application := models.LoanApplication{

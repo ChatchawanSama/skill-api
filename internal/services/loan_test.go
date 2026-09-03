@@ -1,11 +1,12 @@
 package services
 
 import (
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/fusic/skill-api/internal/constant"
 	"github.com/fusic/skill-api/internal/entity"
-	"github.com/fusic/skill-api/internal/models"
 	"github.com/fusic/skill-api/internal/repositories/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -84,7 +85,14 @@ func TestIsEligibleLoanAmount_Ineligible(t *testing.T) {
 	assert.False(t, actual)
 }
 
-func TestLoanService_ApplyLoan(t *testing.T) {
+func TestLoanService_ApplyLoan_Success(t *testing.T) {
+	fixedID := "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+	fixedTime := time.Date(
+		2026, time.August, 31,
+		10, 30, 0, 0,
+		time.Local,
+	)
+
 	request := entity.ApplyLoanRequest{
 		FullName:      "John Doe",
 		MonthlyIncome: 10000,
@@ -94,38 +102,57 @@ func TestLoanService_ApplyLoan(t *testing.T) {
 		PhoneNumber:   "0812345678",
 		Email:         "john@example.com",
 	}
-	var savedApplication models.LoanApplication
+	//expectedresponse
+	expectedResponse := entity.ApplyLoanResponse{
+		ApplicationID: fixedID,
+		Eligible:      true,
+		Reason:        constant.ReasonEligible,
+		Timestamp:     fixedTime,
+	}
 
 	mockRepository := mocks.NewLoanRepository(t)
 
 	mockRepository.
 		On("ApplyLoan", mock.AnythingOfType("models.LoanApplication")).
-		Run(func(args mock.Arguments) {
-			savedApplication = args.Get(0).(models.LoanApplication)
-		}).
 		Return(nil).
 		Once()
 
-	s := NewLoanService(mockRepository)
-
-	response, err := s.ApplyLoan(request)
+	s := &loanService{
+		loanRepository: mockRepository,
+		generateID:     func() string { return fixedID },
+		currentTime:    func() time.Time { return fixedTime },
+	}
+	actualResponse, err := s.ApplyLoan(request)
 
 	require.NoError(t, err)
-	assert.NotEmpty(t, response.ApplicationID)
-	assert.True(t, response.Eligible)
-	assert.Equal(t, constant.ReasonEligible, response.Reason)
-	assert.False(t, response.Timestamp.IsZero())
+	assert.Equal(t, expectedResponse, actualResponse)
+}
 
-	assert.Equal(t, request.FullName, savedApplication.FullName)
-	assert.Equal(t, request.MonthlyIncome, savedApplication.MonthlyIncome)
-	assert.Equal(t, request.LoanAmount, savedApplication.LoanAmount)
-	assert.Equal(t, request.LoanPurpose, savedApplication.LoanPurpose)
-	assert.Equal(t, request.Age, savedApplication.Age)
-	assert.Equal(t, request.PhoneNumber, savedApplication.PhoneNumber)
-	assert.Equal(t, request.Email, savedApplication.Email)
+func TestLoanService_ApplyLoan_RepositoryError(t *testing.T) {
+	request := entity.ApplyLoanRequest{
+		FullName:      "John Doe",
+		MonthlyIncome: 10000,
+		LoanAmount:    120000,
+		LoanPurpose:   "home",
+		Age:           20,
+		PhoneNumber:   "0812345678",
+		Email:         "john@example.com",
+	}
 
-	assert.Equal(t, response.ApplicationID, savedApplication.ApplicationID)
-	assert.Equal(t, response.Eligible, savedApplication.Eligible)
-	assert.Equal(t, response.Reason, savedApplication.Reason)
-	assert.Equal(t, response.Timestamp, savedApplication.Timestamp)
+	expectedError := errors.New("failed to save loan application")
+	expectedResponse := entity.ApplyLoanResponse{}
+
+	mockRepository := mocks.NewLoanRepository(t)
+
+	mockRepository.
+		On("ApplyLoan", mock.AnythingOfType("models.LoanApplication")).
+		Return(expectedError).
+		Once()
+
+	service := NewLoanService(mockRepository)
+
+	actualResponse, err := service.ApplyLoan(request)
+
+	require.ErrorIs(t, err, expectedError)
+	assert.Equal(t, expectedResponse, actualResponse)
 }
